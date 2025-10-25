@@ -58,13 +58,13 @@
             
             await new Promise(resolve => requestAnimationFrame(resolve));
     
-            //try {
-            //    Change it to your log server address
-            //    await fetch('http://192.168.1.180:8080/log', {
-            //        method: 'POST',
-            //        body: message,
-            //    });
-            //} catch (e) { }
+            try {
+                //Change it to your log server address
+                await fetch('http://192.168.1.180:8080/log', {
+                    method: 'POST',
+                    body: message,
+                });
+            } catch (e) { }
         }
         
         function toHex(num) {
