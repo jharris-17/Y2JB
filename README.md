@@ -5,6 +5,7 @@ Userland code execution using the PS5 YouTube app.
 ## Requirements
 
 ### For Jailbroken PS5 (Webkit, Lua, BD-JB)
+- Fake or legit activated PS5
 - YouTube app version 1.03 PKG
 - FTP access to the console
 
