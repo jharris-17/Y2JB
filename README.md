@@ -9,6 +9,7 @@ Userland code execution using the PS5 YouTube app.
 - FTP access to the console
 
 ### For Non-Jailbroken PS5
+- USB flash drive
 - Pre-made backup file
 
 ## Setup Instructions
