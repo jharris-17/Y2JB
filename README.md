@@ -4,6 +4,8 @@ Userland code execution using the PS5 YouTube app.
 
 ## Requirements
 
+- At least 4.03 firmware PS5
+
 ### For Jailbroken PS5 (Webkit, Lua, BD-JB)
 - Fake or legit activated PS5
 - USA YouTube app version 1.03 PKG
