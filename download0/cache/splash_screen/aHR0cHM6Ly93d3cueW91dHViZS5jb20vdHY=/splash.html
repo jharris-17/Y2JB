@@ -26,6 +26,7 @@
 <body>
     <script>
         const version_string = "Y2JB 1.0 by Gezine";
+        const DEBUG_NETWORK_LOGGING = false;
     
         let outputElement = null;
         // hack for scrolling messages
@@ -56,17 +57,27 @@
                 outputElement.removeChild(outputElement.children[0]);
             }
             
-            await new Promise(resolve => requestAnimationFrame(resolve));
-    
-            try {
-                // Change it to your log server address
-                // DO NOT COMMENT OUT NETWORK LOGGER
-                // IT MAKES SCREEN LOGGING HAPPY
-                await fetch('http://192.168.1.180:8080/log', {
-                    method: 'POST',
-                    body: message,
+            if (DEBUG_NETWORK_LOGGING) {
+                
+                try {
+                
+                    await new Promise(resolve => requestAnimationFrame(resolve));
+                    
+                    // Change it to your log server address
+                    await fetch('http://192.168.1.180:8080/log', {
+                        method: 'POST',
+                        body: message,
+                    });
+                } catch (e) { }
+                
+            } else {
+                
+                await new Promise(resolve => {
+                    requestAnimationFrame(() => {
+                        setTimeout(resolve, 1);
+                    });
                 });
-            } catch (e) { }
+            }
         }
         
         function toHex(num) {
@@ -89,6 +100,7 @@
 
         setTimeout(async () => {
             try {
+                await log(version_string);
                 await log('Starting Exploit');
                 
                 // CVE-2021-38003
