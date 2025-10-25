@@ -31,7 +31,8 @@ Userland code execution using the PS5 YouTube app.
 ### Non-Jailbroken PS5
 
 1. Download the backup file from the releases page
-2. Follow Sony's official guide to [restore backup data from USB](https://www.playstation.com/en-gb/support/hardware/back-up-ps5-data-USB/)
+2. Follow Sony's official guide to [restore backup data from USB](https://www.playstation.com/en-gb/support/hardware/back-up-ps5-data-USB/)  
+**Note: Restoring backup WILL FACTORY RESET YOUR PS5**
 
 ## Credits
 
