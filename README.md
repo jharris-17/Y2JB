@@ -14,6 +14,8 @@ Userland code execution using the PS5 YouTube app.
 
 ## Setup Instructions
 
+0. Set your PS5 network DNS to 127.0.0.2 (Or block www.youtube.com from your custom DNS)
+
 ### Jailbroken PS5
 
 1. Install YouTube app version 1.03 PKG on your PS5
