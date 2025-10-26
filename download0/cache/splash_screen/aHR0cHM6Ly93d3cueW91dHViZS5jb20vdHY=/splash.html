@@ -26,7 +26,9 @@
 <body>
     <script>
         const version_string = "Y2JB 1.0 by Gezine";
-        const DEBUG_NETWORK_LOGGING = false;
+        const NETWORK_LOGGING = false;
+        // Change it to your log server address
+        const LOG_SERVER = 'http://192.168.1.180:8080/log';
     
         let outputElement = null;
         // hack for scrolling messages
@@ -47,36 +49,32 @@
                 outputElement.style.paddingTop = topPadding + 'px'; 
             }
             
-            let lineDiv = document.createElement('div');
-            lineDiv.textContent = message;
-            lineDiv.style.fontSize = fontSize + 'px';
+            const lines = message.split('\n').filter(line => line.length > 0);
+            lines.forEach(line => {
+                let lineDiv = document.createElement('div');
+                lineDiv.textContent = line;
+                lineDiv.style.fontSize = fontSize + 'px';
+                
+                outputElement.appendChild(lineDiv);
+            });
             
-            outputElement.appendChild(lineDiv);
-            
-            if (outputElement.children.length > maxLines) {
+            while (outputElement.children.length > maxLines) {
                 outputElement.removeChild(outputElement.children[0]);
             }
             
-            if (DEBUG_NETWORK_LOGGING) {
+            await new Promise(resolve => {
+                requestAnimationFrame(() => {
+                    setTimeout(resolve, 1);
+                });
+            });
                 
+            if (NETWORK_LOGGING) {
                 try {
-                
-                    await new Promise(resolve => requestAnimationFrame(resolve));
-                    
-                    // Change it to your log server address
-                    await fetch('http://192.168.1.180:8080/log', {
+                    await fetch(LOG_SERVER, {
                         method: 'POST',
                         body: message,
                     });
                 } catch (e) { }
-                
-            } else {
-                
-                await new Promise(resolve => {
-                    requestAnimationFrame(() => {
-                        setTimeout(resolve, 1);
-                    });
-                });
             }
         }
         
