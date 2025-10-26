@@ -3,7 +3,7 @@
         
         await log("setlogserver is not supported on Y2JB 1.0");    
         
-    else {
+    } else {
         // Change this to your server
         LOG_SERVER = 'http://192.168.1.180:8080/log';
         
