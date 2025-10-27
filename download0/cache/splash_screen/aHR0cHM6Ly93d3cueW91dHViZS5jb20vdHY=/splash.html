@@ -803,7 +803,6 @@
                 let psn_matches = 0;
                 let yt_matches = 0;
                 
-                // First scan
                 while (current_addr < end_addr && (psn_matches < 2 || yt_matches < 1)) {
                     const ret = call(sceKernelVirtualQuery, current_addr, 1n, info, 0x60n);
                     
@@ -816,7 +815,7 @@
                     
                     regions_searched++;
                     
-                    if (size <= 0x80000n && protection === 3n) {
+                    if (size <= 0x40000n && protection === 3n) {
                         
                         for (let addr = start; addr < end; addr += 8n) {
                             
@@ -1146,7 +1145,7 @@
                 await log(e.stack);
             }
             
-        }, 650);
+        }, 800);
     </script>
 </body>
 </html>
