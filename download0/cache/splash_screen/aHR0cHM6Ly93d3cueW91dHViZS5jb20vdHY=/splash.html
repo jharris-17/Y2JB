@@ -946,7 +946,7 @@
                     await log("PSN dialog disabled\nSafe to close PSN sign out dialog now");
                 } else {
                     send_notification("Failed to disable PSN dialog\nDo not close PSN sign out dialog early\nClose and restart Y2JB");
-                    throw new Error(`Failed to disable PSN dialog (PSN: ${psn_matches}/2, YT: ${yt_matches}/1)\nDo not close PSN sign out dialog early\nClose and restart Y2JB`);
+                    throw new Error("Failed to disable PSN dialog\nDo not close PSN sign out dialog early\nClose and restart Y2JB");
                 }
                 
                 await checkLogServer();
@@ -1066,8 +1066,13 @@
                 const current_ip = get_current_ip();
                 const network_str = current_ip ? (current_ip + ":" + port) : ("port " + port);
                 
-                await log("Remote JS Loader listening on " + network_str);
-                send_notification("Remote JS Loader\nListening on " + network_str);
+                if (current_ip === null) {
+                    send_notification("No network available!\nAborting...");
+                    throw new Error("No network available!\nAborting...");
+                } else {
+                    await log("Remote JS Loader listening on " + network_str);
+                    send_notification("Remote JS Loader\nListening on " + network_str);
+                }
                 
                 const decoder = new TextDecoder('utf-8');
                 
